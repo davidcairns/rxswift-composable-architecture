@@ -313,4 +313,26 @@ extension ObservableType {
       .catchError { Observable<Result<Element, Error>>.just(Result.failure($0)) }
       .eraseToEffect()
   }
+
+  /// Turns any publisher into an `Effect` for any output type by ignoring all output.
+  ///
+  /// This is useful for times you want to fire off an effect but don't want to feed any data back
+  /// into the system. It can automatically promote an effect to your reducer's domain.
+  ///
+  ///     case .buttonTapped:
+  ///       return analyticsClient.track("Button Tapped")
+  ///         .fireAndForget()
+  ///
+  /// - Parameters:
+  ///   - outputType: An output type.
+  /// - Returns: An effect that never produces output or errors.
+  public func fireAndForget<NewOutput>(
+    outputType: NewOutput.Type = NewOutput.self
+  ) -> Effect<NewOutput> {
+    return
+      self
+      .materialize()
+      .flatMap { _ in Observable<NewOutput>.empty() }
+      .eraseToEffect()
+  }
 }
